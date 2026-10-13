@@ -1,0 +1,53 @@
+
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Inspect project
+        run: |
+          ls -la
+          find . -maxdepth 3 -name package.json -o -name capacitor.config.json -o -name capacitor.config.ts
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build web app
+        run: npm run build --if-present
+
+      - name: Build APK
+        run: |
+          npm install @capacitor/android@^6 @capacitor/cli@^6
+          npx cap add android
+          npx cap sync android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ario-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          
