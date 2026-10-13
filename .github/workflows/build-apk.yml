@@ -24,30 +24,39 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Inspect project
+      - name: Install unzip
+        run: sudo apt-get update && sudo apt-get install -y unzip
+
+      - name: Extract project
         run: |
-          ls -la
-          find . -maxdepth 3 -name package.json -o -name capacitor.config.json -o -name capacitor.config.ts
+          unzip -o .github/workflows/barnameyar-android.zip -d .
+          ls -la barnameyar-android
 
       - name: Install dependencies
+        working-directory: barnameyar-android
         run: npm install
 
-      - name: Build web app
-        run: npm run build --if-present
+      - name: Create Android project
+        working-directory: barnameyar-android
+        run: npx cap add android
+
+      - name: Apply icons
+        working-directory: barnameyar-android
+        run: bash scripts/apply-icons.sh
+
+      - name: Sync Android
+        working-directory: barnameyar-android
+        run: npx cap sync android
 
       - name: Build APK
+        working-directory: barnameyar-android/android
         run: |
-          npm install @capacitor/android@^6 @capacitor/cli@^6
-          npx cap add android
-          npx cap sync android
-          cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload APK
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Ario-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: barnameyar-android/android/app/build/outputs/apk/debug/app-debug.apk
           
